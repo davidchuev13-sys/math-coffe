@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра «Математический бариста»</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #2c1d11 0%, #0f0a06 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+            background: rgba(38, 26, 17, 0.95);
+            border: 2px solid #5c3d2e;
+            border-radius: 28px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 140, 89, 0.2);
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .title {
+            font-size: 36px;
+            color: #f39c12;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #d7ccc8;
+            line-height: 1.5;
+        }
+
+        /* Индикатор шагов */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .step-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4a3222;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: #f39c12;
+            box-shadow: 0 0 12px #f39c12;
+            transform: scale(1.25);
+        }
+
+        .step-dot.completed {
+            background: #2ecc71;
+        }
+
+        /* Карточка заказа */
+        .order-card {
+            background: #1c130c;
+            border: 2px solid #4a3222;
+            border-radius: 24px;
+            padding: 35px 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .order-step-num {
+            font-size: 18px;
+            color: #f39c12;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .order-title {
+            font-size: 34px;
+            color: #e0a96d;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .equation-box {
+            font-size: 40px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 40px;
+            border-radius: 18px;
+            border: 2px solid rgba(243, 156, 18, 0.3);
+            letter-spacing: 2px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        /* Кнопки ответов */
+        .options-group {
+            display: flex;
+            gap: 18px;
+            width: 100%;
+            max-width: 480px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .option-btn {
+            background: #2c1d11;
+            border: 2px solid #5c3d2e;
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 16px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            outline: none;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #e0a96d;
+            color: #1c130c;
+            border-color: #e0a96d;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(224, 169, 109, 0.3);
+        }
+
+        .option-btn.correct {
+            background: #2ecc71 !important;
+            border-color: #2ecc71 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 25px rgba(46, 204, 113, 0.6);
+        }
+
+        .option-btn.wrong {
+            background: #e74c3c !important;
+            border-color: #e74c3c !important;
+            color: #ffffff !important;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* УВЕЛИЧЕННАЯ И ПРОРАБОТАННАЯ ЗОНА ЧАШКИ */
+        .coffee-display {
+            width: 170px;
+            height: 190px;
+            margin-top: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            opacity: 0.15;
+            filter: grayscale(100%);
+            transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .coffee-display.active {
+            opacity: 1;
+            filter: grayscale(0%);
+            transform: scale(1.1);
+        }
+
+        /* Керамическая чашка */
+        .cup-wrapper {
+            position: relative;
+            width: 130px;
+            height: 110px;
+        }
+
+        .cup {
+            width: 130px;
+            height: 110px;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            border-radius: 0 0 50px 50px;
+            position: relative;
+            box-shadow: inset -8px -8px 15px rgba(0,0,0,0.2), 0 10px 25px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 3px solid #d4d4d4;
+            border-top: none;
+        }
+
+        .cup-handle {
+            width: 32px;
+            height: 60px;
+            border: 7px solid #ffffff;
+            border-radius: 0 20px 20px 0;
+            position: absolute;
+            right: -28px;
+            top: 20px;
+            box-shadow: 3px 5px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Блюдце внизу */
+        .saucer {
+            width: 160px;
+            height: 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+            border-radius: 10px;
+            margin-top: -4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Слои кофе */
+        .liquid-container {
+            width: 100%;
+            height: 0%;
+            position: absolute;
+            bottom: 0;
+            transition: height 0.8s ease-in-out;
+            overflow: hidden;
+        }
+
+        .coffee-display.active .liquid-container {
+            height: 85%;
+        }
+
+        /* Напитки */
+        .espresso-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #5a3219 0%, #2b1307 100%);
+        }
+
+        .cappuccino-coffee {
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(180deg, #6e4327 0%, #3a1e0e 100%);
+            position: absolute;
+            bottom: 0;
+        }
+        .cappuccino-foam {
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(180deg, #fff3e0 0%, #f5d6b3 100%);
+            position: absolute;
+            top: 0;
+        }
+
+        .latte-coffee {
+            width: 100%;
+            height: 35%;
+            background: linear-gradient(180deg, #7c4d28 0%, #46250e 100%);
+            position: absolute;
+            bottom: 0;
+        }
+        .latte-milk {
+            width: 100%;
+            height: 45%;
+            background: #fff8f0;
+            position: absolute;
+            bottom: 35%;
+        }
+        .latte-foam {
+            width: 100%;
+            height: 20%;
+            background: #ffffff;
+            position: absolute;
+            top: 0;
+        }
+
+        /* Пар */
+        .steam-box {
+            position: absolute;
+            top: -35px;
+            display: flex;
+            gap: 12px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .coffee-display.active .steam-box {
+            opacity: 0.85;
+        }
+
+        .steam-line {
+            font-size: 26px;
+            animation: floatSteam 2.2s infinite ease-in-out;
+        }
+
+        .steam-line:nth-child(2) { animation-delay: 0.4s; }
+        .steam-line:nth-child(3) { animation-delay: 0.8s; }
+
+        @keyframes floatSteam {
+            0% { transform: translateY(0) scale(0.8); opacity: 0.2; }
+            50% { opacity: 0.9; }
+            100% { transform: translateY(-20px) scale(1.2); opacity: 0; }
+        }
+
+        /* Кнопка "Следующий заказ" */
+        .next-btn {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border: none;
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 700;
+            padding: 16px 40px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(243, 156, 18, 0.4);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            display: none;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(243, 156, 18, 0.6);
+        }
+
+        /* Финальный экран */
+        .victory-screen {
+            display: none;
+            padding: 30px 10px;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .victory-icon {
+            font-size: 80px;
+            margin-bottom: 15px;
+        }
+
+        .victory-title {
+            font-size: 36px;
+            color: #2ecc71;
+            margin-bottom: 15px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .victory-text {
+            font-size: 22px;
+            color: #d7ccc8;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 25px 15px; }
+            .title { font-size: 28px; }
+            .order-title { font-size: 28px; }
+            .equation-box { font-size: 32px; padding: 10px 25px; }
+            .option-btn { font-size: 24px; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Математический бариста</h1>
+            <p class="subtitle">Примите заказы клиентов! Кофемашина приготовит напиток только при правильном решении показательного уравнения.</p>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step-dot active" id="dot-0"></div>
+            <div class="step-dot" id="dot-1"></div>
+            <div class="step-dot" id="dot-2"></div>
+        </div>
+
+        <div class="order-card" id="orderCard">
+            <div class="order-step-num" id="orderStepNum">Заказ 1 из 3</div>
+            <div class="order-title" id="orderTitle">Эспрессо</div>
+            
+            <div class="equation-box" id="equationBox">2<sup>x</sup> = 8</div>
+
+            <div class="options-group" id="optionsGroup"></div>
+
+            <!-- Детализированная чашка с блюдцем -->
+            <div class="coffee-display" id="coffeeDisplay">
+                <div class="steam-box">
+                    <span class="steam-line">♨️</span>
+                    <span class="steam-line">♨️</span>
+                </div>
+                <div class="cup-wrapper">
+                    <div class="cup-handle"></div>
+                    <div class="cup">
+                        <div class="liquid-container" id="cupLiquid"></div>
+                    </div>
+                </div>
+                <div class="saucer"></div>
+            </div>
+
+            <button class="next-btn" id="nextBtn" onclick="nextOrder()">Следующий заказ ➔</button>
+        </div>
+
+        <div class="victory-screen" id="victoryScreen">
+            <div class="victory-icon">☕🎉</div>
+            <div class="victory-title">Все заказы выполнены!</div>
+            <div class="victory-text">
+                Вы отличный математический бариста! Все напитки успешно приготовлены и вручены клиентам.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ORDERS = [
+            {
+                name: "Эспрессо",
+                equation: "2<sup>x</sup> = 8",
+                options: [2, 3, 4],
+                correct: 3,
+                liquidHtml: '<div class="espresso-fill"></div>'
+            },
+            {
+                name: "Капучино",
+                equation: "3<sup>x</sup> = 81",
+                options: [3, 4, 5],
+                correct: 4,
+                liquidHtml: '<div class="cappuccino-foam"></div><div class="cappuccino-coffee"></div>'
+            },
+            {
+                name: "Латте",
+                equation: "5<sup>x</sup> = 25",
+                options: [1, 2, 3],
+                correct: 2,
+                liquidHtml: '<div class="latte-foam"></div><div class="latte-milk"></div><div class="latte-coffee"></div>'
+            }
+        ];
+
+        let currentStep = 0;
+
+        function loadOrder(index) {
+            const data = ORDERS[index];
+            
+            document.getElementById('orderStepNum').textContent = `Заказ ${index + 1} из ${ORDERS.length}`;
+            document.getElementById('orderTitle').textContent = data.name;
+            document.getElementById('equationBox').innerHTML = data.equation;
+            document.getElementById('cupLiquid').innerHTML = data.liquidHtml;
+            
+            document.getElementById('coffeeDisplay').classList.remove('active');
+            document.getElementById('nextBtn').style.display = 'none';
+
+            const optionsGroup = document.getElementById('optionsGroup');
+            optionsGroup.innerHTML = '';
+            
+            data.options.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = val;
+                btn.onclick = () => handleAnswer(val, btn, data.correct);
+                optionsGroup.appendChild(btn);
+            });
+
+            for (let i = 0; i < ORDERS.length; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i < index) {
+                    dot.className = 'step-dot completed';
+                } else if (i === index) {
+                    dot.className = 'step-dot active';
+                } else {
+                    dot.className = 'step-dot';
+                }
+            }
+        }
+
+        function handleAnswer(selectedVal, btn, correctVal) {
+            const allBtns = document.querySelectorAll('.option-btn');
+            
+            if (selectedVal === correctVal) {
+                btn.classList.add('correct');
+                allBtns.forEach(b => b.disabled = true);
+                
+                document.getElementById('coffeeDisplay').classList.add('active');
+                
+                const nextBtn = document.getElementById('nextBtn');
+                if (currentStep < ORDERS.length - 1) {
+                    nextBtn.textContent = 'Следующий заказ ➔';
+                } else {
+                    nextBtn.textContent = 'Завершить ➔';
+                }
+                nextBtn.style.display = 'inline-block';
+            } else {
+                btn.classList.add('wrong');
+                setTimeout(() => btn.classList.remove('wrong'), 800);
+            }
+        }
+
+        function nextOrder() {
+            currentStep++;
+            if (currentStep < ORDERS.length) {
+                loadOrder(currentStep);
+            } else {
+                document.getElementById('orderCard').style.display = 'none';
+                document.querySelector('.step-indicator').style.display = 'none';
+                document.getElementById('victoryScreen').style.display = 'block';
+            }
+        }
+
+        loadOrder(0);
+    </script>
+</body>
+</html>
